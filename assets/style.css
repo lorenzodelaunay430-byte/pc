@@ -1,0 +1,31 @@
+/* Reset + base */
+* {margin:0; padding:0; box-sizing:border-box;}
+body {font-family:sans-serif; background:#f9f9f9; color:#111;}
+a {text-decoration:none; color:inherit;}
+button {cursor:pointer;}
+
+/* Navbar */
+.navbar {position:fixed; top:0; width:100%; background:rgba(255,255,255,0.8); display:flex; justify-content:space-between; padding:1rem 2rem; border-bottom:1px solid #ddd; backdrop-filter:blur(10px);}
+.navbar .logo {font-weight:bold; font-size:1.5rem;}
+.navbar nav a {margin-left:1.5rem;}
+
+/* Hero */
+.hero {display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; text-align:center; animation:fadeIn 1s ease;}
+.hero h1 {font-size:3rem; margin-bottom:1rem;}
+.hero p {font-size:1.2rem; margin-bottom:2rem;}
+.btn {padding:0.8rem 1.5rem; background:linear-gradient(to right,#0ea5e9,#6366f1); color:white; border:none; border-radius:1rem; transition:all 0.3s ease;}
+.btn:hover {transform:translateY(-2px); box-shadow:0 8px 15px rgba(0,0,0,0.2);}
+
+/* Forms */
+textarea, input {width:100%; padding:0.8rem; margin-bottom:1rem; border-radius:0.8rem; border:1px solid #ccc;}
+textarea {height:100px; resize:none;}
+main {padding:6rem 2rem 2rem; max-width:800px; margin:0 auto;}
+
+/* Devis */
+#result {margin-top:1rem; padding:1rem; border-radius:1rem; background:#e0e7ff;}
+
+/* Animations */
+@keyframes fadeIn {0%{opacity:0;} 100%{opacity:1;}}
+
+/* Footer */
+footer {text-align:center; padding:2rem; color:#888;}
