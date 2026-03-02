@@ -1,126 +1,195 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Suivi Boîtes Maintenance</title>
 <style>
   body {
-    font-family: Arial, sans-serif;
-    max-width: 600px;
-    margin: 30px auto;
-    padding: 0 15px;
-    background: #f9f9f9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f2f5;
     color: #333;
+    margin: 0;
+    padding: 0;
   }
-  h1 {
+  header {
     text-align: center;
+    padding: 20px;
+    background: #3498db;
+    color: white;
+    font-size: 1.8em;
+  }
+  .container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 15px;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    font-size: 1em;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+  }
+  .boxes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
+    gap: 15px;
+  }
+  .box {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    cursor: pointer;
+  }
+  .box:hover {
+    transform: translateY(-5px);
+  }
+  .box h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
     color: #2c3e50;
   }
-  input, button {
-    font-size: 1em;
-    padding: 8px;
-    margin-top: 8px;
+  .box p {
+    margin: 4px 0;
+    font-size: 0.95em;
+    color: #555;
+  }
+  .box input, .box select {
     width: 100%;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
+    margin-top: 4px;
+    margin-bottom: 8px;
+    padding: 6px;
+    font-size: 0.9em;
     border-radius: 4px;
+    border: 1px solid #ccc;
   }
-  input:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 5px #3498db;
-  }
-  button {
+  .box button {
     background-color: #3498db;
     color: white;
     border: none;
+    padding: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    margin-top: 15px;
-  }
-  button:hover {
-    background-color: #2980b9;
-  }
-  #boxDetails p {
-    margin: 12px 0 4px 0;
+    width: 100%;
     font-weight: bold;
   }
-  #boxDetails input {
-    font-weight: normal;
+  .box button:hover {
+    background-color: #2980b9;
   }
-  #boxDetails p b {
-    display: inline-block;
-    width: 100px;
-    color: #555;
+  #message {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: green;
   }
 </style>
 </head>
 <body>
 
-<h1>Recherche boîte par code-barres</h1>
-
-<input id="searchInput" placeholder="Scannez ou tapez le code" autofocus />
-
-<div id="boxDetails" style="margin-top:20px;"></div>
+<header>Suivi des Boîtes Maintenance</header>
+<div class="container">
+  <input id="searchInput" placeholder="Scannez ou tapez le code d'une boîte" autofocus>
+  <div id="message"></div>
+  <div class="boxes-grid" id="boxesGrid"></div>
+</div>
 
 <script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-  const supabaseUrl = 'https://aecifmxziwddaqihjjey.supabase.co'
-  const supabaseKey = 'sb_publishable_Kq-2FsEdgffq0bMt-zfXZg_TbiOJcdP'
-  const supabase = createClient(supabaseUrl, supabaseKey)
+const supabaseUrl = 'https://aecifmxziwddaqihjjey.supabase.co'
+const supabaseKey = 'sb_publishable_Kq-2FsEdgffq0bMt-zfXZg_TbiOJcdP'
+const supabase = createClient(supabaseUrl, supabaseKey)
 
-  const searchInput = document.getElementById('searchInput')
-  const boxDetails = document.getElementById('boxDetails')
+const boxesGrid = document.getElementById('boxesGrid')
+const searchInput = document.getElementById('searchInput')
+const messageDiv = document.getElementById('message')
 
-  searchInput.addEventListener('input', async () => {
-    const code = searchInput.value.trim()
-    if (code.length === 0) {
-      boxDetails.innerHTML = ''
-      return
+// Fonction pour insérer 47 codes si pas déjà présents
+async function insertDefaultCodes() {
+  const codes = []
+  for(let i=1;i<=47;i++) {
+    codes.push({ code_boite: `BX-${i.toString().padStart(3,'0')}`, localisation: '', statut: '', defaut: '' })
+  }
+  for(const item of codes) {
+    const { data: exists } = await supabase.from('boite').select('code_boite').eq('code_boite', item.code_boite).single()
+    if(!exists) {
+      await supabase.from('boite').insert(item)
+      console.log('Ajouté:', item.code_boite)
     }
+  }
+}
 
-    let { data, error } = await supabase
-      .from('boites')
-      .select('*')
-      .eq('code_boite', code)
-      .single()
+// Affiche toutes les boîtes (ou filtrées)
+async function displayBoxes(filterCode='') {
+  let query = supabase.from('boite').select('*')
+  if(filterCode) {
+    query = query.eq('code_boite', filterCode)
+  }
+  const { data, error } = await query
+  boxesGrid.innerHTML = ''
+  if(error || !data.length) {
+    boxesGrid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#888">Boîte non trouvée</p>'
+    return
+  }
+  data.forEach(box => {
+    const boxDiv = document.createElement('div')
+    boxDiv.className = 'box'
+    boxDiv.innerHTML = `
+      <h3>${box.code_boite}</h3>
+      <p>Localisation:</p>
+      <select class="locSelect">
+        <option value="">--</option>
+        <option value="Stock">Stock</option>
+        <option value="Atelier H">Atelier H</option>
+      </select>
+      <p>Statut:</p>
+      <select class="statutSelect">
+        <option value="">--</option>
+        <option value="En stock">En stock</option>
+        <option value="Non disponible">Non disponible</option>
+      </select>
+      <p>Défaut:</p>
+      <input class="defautInput" type="text" placeholder="Défaut">
+      <button>Sauvegarder</button>
+    `
+    // Remplir avec valeurs actuelles
+    boxDiv.querySelector('.locSelect').value = box.localisation || ''
+    boxDiv.querySelector('.statutSelect').value = box.statut || ''
+    boxDiv.querySelector('.defautInput').value = box.defaut || ''
 
-    if (error || !data) {
-      boxDetails.innerHTML = '<p>Boîte non trouvée</p>'
-    } else {
-      boxDetails.innerHTML = `
-        <p><b>Code :</b> ${data.code_boite}</p>
-        <p><b>Statut :</b> <input id="statut" value="${data.statut || ''}"></p>
-        <p><b>Localisation :</b> <input id="localisation" value="${data.localisation || ''}"></p>
-        <p><b>Défaut :</b> <input id="defaut" value="${data.defaut || ''}"></p>
-        <p><b>Technicien :</b> <input id="technicien" value="${data.technicien || ''}"></p>
-        <p><b>Date entrée :</b> <input type="date" id="date_entree" value="${data.date_entree ? data.date_entree.substring(0,10) : ''}"></p>
-        <button id="saveBtn">Sauvegarder</button>
-      `
-
-      document.getElementById('saveBtn').onclick = async () => {
-        const statut = document.getElementById('statut').value
-        const localisation = document.getElementById('localisation').value
-        const defaut = document.getElementById('defaut').value
-        const technicien = document.getElementById('technicien').value
-        const date_entree = document.getElementById('date_entree').value
-
-        const { error } = await supabase
-          .from('boites')
-          .update({ statut, localisation, defaut, technicien, date_entree })
-          .eq('code_boite', code)
-
-        if (error) {
-          alert('Erreur lors de la sauvegarde')
-        } else {
-          alert('Données sauvegardées avec succès')
-        }
+    boxDiv.querySelector('button').onclick = async () => {
+      const localisation = boxDiv.querySelector('.locSelect').value
+      const statut = boxDiv.querySelector('.statutSelect').value
+      const defaut = boxDiv.querySelector('.defautInput').value
+      const { error } = await supabase.from('boite').update({ localisation, statut, defaut }).eq('code_boite', box.code_boite)
+      if(error) {
+        messageDiv.style.color = 'red'
+        messageDiv.textContent = 'Erreur lors de la sauvegarde'
+      } else {
+        messageDiv.style.color = 'green'
+        messageDiv.textContent = 'Sauvegardé avec succès'
       }
+      setTimeout(()=>{messageDiv.textContent=''},2000)
     }
+
+    boxesGrid.appendChild(boxDiv)
   })
+}
+
+// Quand on tape ou scanne
+searchInput.addEventListener('input', () => {
+  const code = searchInput.value.trim().toUpperCase()
+  displayBoxes(code)
+})
+
+// Initialisation
+insertDefaultCodes().then(()=> displayBoxes())
 </script>
 
 </body>
 </html>
-
