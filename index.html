@@ -4,6 +4,56 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Suivi Boîtes Maintenance</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 0 15px;
+    background: #f9f9f9;
+    color: #333;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+  }
+  input, button {
+    font-size: 1em;
+    padding: 8px;
+    margin-top: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 5px #3498db;
+  }
+  button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 15px;
+  }
+  button:hover {
+    background-color: #2980b9;
+  }
+  #boxDetails p {
+    margin: 12px 0 4px 0;
+    font-weight: bold;
+  }
+  #boxDetails input {
+    font-weight: normal;
+  }
+  #boxDetails p b {
+    display: inline-block;
+    width: 100px;
+    color: #555;
+  }
+</style>
 </head>
 <body>
 
@@ -13,7 +63,63 @@
 
 <div id="boxDetails" style="margin-top:20px;"></div>
 
-<script src="script.js"></script>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+  const supabaseUrl = 'https://YOUR_SUPABASE_URL'
+  const supabaseKey = 'YOUR_SUPABASE_PUBLIC_ANON_KEY'
+  const supabase = createClient(supabaseUrl, supabaseKey)
+
+  const searchInput = document.getElementById('searchInput')
+  const boxDetails = document.getElementById('boxDetails')
+
+  searchInput.addEventListener('input', async () => {
+    const code = searchInput.value.trim()
+    if (code.length === 0) {
+      boxDetails.innerHTML = ''
+      return
+    }
+
+    let { data, error } = await supabase
+      .from('boites')
+      .select('*')
+      .eq('code_boite', code)
+      .single()
+
+    if (error || !data) {
+      boxDetails.innerHTML = '<p>Boîte non trouvée</p>'
+    } else {
+      boxDetails.innerHTML = `
+        <p><b>Code :</b> ${data.code_boite}</p>
+        <p><b>Statut :</b> <input id="statut" value="${data.statut || ''}"></p>
+        <p><b>Localisation :</b> <input id="localisation" value="${data.localisation || ''}"></p>
+        <p><b>Défaut :</b> <input id="defaut" value="${data.defaut || ''}"></p>
+        <p><b>Technicien :</b> <input id="technicien" value="${data.technicien || ''}"></p>
+        <p><b>Date entrée :</b> <input type="date" id="date_entree" value="${data.date_entree ? data.date_entree.substring(0,10) : ''}"></p>
+        <button id="saveBtn">Sauvegarder</button>
+      `
+
+      document.getElementById('saveBtn').onclick = async () => {
+        const statut = document.getElementById('statut').value
+        const localisation = document.getElementById('localisation').value
+        const defaut = document.getElementById('defaut').value
+        const technicien = document.getElementById('technicien').value
+        const date_entree = document.getElementById('date_entree').value
+
+        const { error } = await supabase
+          .from('boites')
+          .update({ statut, localisation, defaut, technicien, date_entree })
+          .eq('code_boite', code)
+
+        if (error) {
+          alert('Erreur lors de la sauvegarde')
+        } else {
+          alert('Données sauvegardées avec succès')
+        }
+      }
+    }
+  })
+</script>
 
 </body>
 </html>
