@@ -1,80 +1,55 @@
-// Year
-document.getElementById("year").textContent = new Date().getFullYear();
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-// Reveal on scroll
-const els = document.querySelectorAll(".reveal");
-const io = new IntersectionObserver((entries) => {
-  entries.forEach((e) => {
-    if (e.isIntersecting) e.target.classList.add("visible");
-  });
-}, { threshold: 0.12 });
-els.forEach(el => io.observe(el));
+const supabaseUrl = 'https://YOUR_SUPABASE_URL'
+const supabaseKey = 'YOUR_SUPABASE_PUBLIC_ANON_KEY'
+const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Active nav link
-const sections = [...document.querySelectorAll("main section[id]")];
-const navLinks = [...document.querySelectorAll(".nav-link")];
+const searchInput = document.getElementById('searchInput')
+const boxDetails = document.getElementById('boxDetails')
 
-const setActive = () => {
-  const y = window.scrollY + 140;
-  let current = sections[0]?.id;
-
-  for (const s of sections) {
-    if (s.offsetTop <= y) current = s.id;
+searchInput.addEventListener('input', async () => {
+  const code = searchInput.value.trim()
+  if (code.length === 0) {
+    boxDetails.innerHTML = ''
+    return
   }
-
-  navLinks.forEach(a => {
-    a.classList.toggle("active", a.getAttribute("href") === `#${current}`);
-  });
-};
-window.addEventListener("scroll", setActive, { passive: true });
-setActive();
-
-// Mobile menu
-const menuBtn = document.getElementById("menuBtn");
-const sideNav = document.getElementById("sideNav");
-const backdrop = document.getElementById("backdrop");
-
-function openMenu() {
-  sideNav.classList.add("open");
-  backdrop.classList.add("show");
-  menuBtn.setAttribute("aria-expanded", "true");
-}
-function closeMenu() {
-  sideNav.classList.remove("open");
-  backdrop.classList.remove("show");
-  menuBtn.setAttribute("aria-expanded", "false");
-}
-
-menuBtn?.addEventListener("click", () => {
-  if (sideNav.classList.contains("open")) closeMenu();
-  else openMenu();
-});
-backdrop?.addEventListener("click", closeMenu);
-navLinks.forEach(a => a.addEventListener("click", () => {
-  // close on mobile after click
-  if (window.matchMedia("(max-width: 760px)").matches) closeMenu();
-}));
-
-// "Form" opens a mailto with prefilled content
-const mailtoBtn = document.getElementById("mailtoBtn");
-mailtoBtn?.addEventListener("click", () => {
-  const name = encodeURIComponent(document.getElementById("name").value || "");
-  const city = encodeURIComponent(document.getElementById("city").value || "");
-  const type = encodeURIComponent(document.getElementById("type").value || "Demande");
-  const msg = encodeURIComponent(document.getElementById("msg").value || "");
-
-  const subject = `Demande LDA Hardware — ${type}`;
-  const body =
-`Bonjour,
-Nom : ${decodeURIComponent(name) || "[ton nom]"}
-Ville : ${decodeURIComponent(city) || "[ta ville]"} (10 km max Embreville)
-Type : ${decodeURIComponent(type)}
-
-Message :
-${decodeURIComponent(msg) || "Explique ici ton problème / ton projet (config, symptômes, budget si montage)"} 
-
-Merci !`;
-
-  const href = `mailto:lorenzodelaunay@icloud.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  window.location.href = href;
-});
+  
+  let { data, error } = await supabase
+    .from('boites')
+    .select('*')
+    .eq('code_boite', code)
+    .single()
+    
+  if (error || !data) {
+    boxDetails.innerHTML = '<p>Boîte non trouvée</p>'
+  } else {
+    boxDetails.innerHTML = `
+      <p><b>Code :</b> ${data.code_boite}</p>
+      <p><b>Statut :</b> <input id="statut" value="${data.statut || ''}"></p>
+      <p><b>Localisation :</b> <input id="localisation" value="${data.localisation || ''}"></p>
+      <p><b>Défaut :</b> <input id="defaut" value="${data.defaut || ''}"></p>
+      <p><b>Technicien :</b> <input id="technicien" value="${data.technicien || ''}"></p>
+      <p><b>Date entrée :</b> <input type="date" id="date_entree" value="${data.date_entree ? data.date_entree.substring(0,10) : ''}"></p>
+      <button id="saveBtn">Sauvegarder</button>
+    `
+    
+    document.getElementById('saveBtn').onclick = async () => {
+      const statut = document.getElementById('statut').value
+      const localisation = document.getElementById('localisation').value
+      const defaut = document.getElementById('defaut').value
+      const technicien = document.getElementById('technicien').value
+      const date_entree = document.getElementById('date_entree').value
+      
+      const { error } = await supabase
+        .from('boites')
+        .update({ statut, localisation, defaut, technicien, date_entree })
+        .eq('code_boite', code)
+      
+      if (error) {
+        alert('Erreur lors de la sauvegarde')
+      } else {
+        alert('Données sauvegardées avec succès')
+      }
+    }
+  }
+})
