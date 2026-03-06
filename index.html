@@ -1,49 +1,61 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stock des boîtes - Lycée</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <header class="topbar">
-    <div>
-      <h1>Gestion du stock des boîtes</h1>
-      <p>Consultation rapide du stock et des emplacements</p>
-    </div>
-  </header>
+<input id="scanInput" type="text" placeholder="Scanne ou tape le code de la boîte">
+<button id="searchBtn">Rechercher</button>
 
-  <main class="container">
-    <section class="card hero">
-      <h2>Recherche rapide</h2>
-      <p>Scanne un code-barres ou saisis l’identifiant d’une boîte pour voir son emplacement, son contenu et son stock.</p>
+<script>
+async function loadStock() {
+  const res = await fetch('./stock.json');
+  return await res.json();
+}
 
-      <form id="searchForm" class="search-row">
-        <input type="text" id="searchInput" placeholder="Exemple : BX-001" autocomplete="off" />
-        <button type="submit">Voir la boîte</button>
-      </form>
+function normalizeScan(raw) {
+  if (!raw) return '';
 
-      <div class="tip">
-        Astuce : programme le code-barres pour ouvrir une URL comme
-        <code>box.html?id=BX-001</code>
-      </div>
-    </section>
+  let value = raw.trim();
 
-    <section class="grid two-cols">
-      <article class="card">
-        <h2>Stock global</h2>
-        <div id="stats" class="stats"></div>
-      </article>
+  // majuscules
+  value = value.toUpperCase();
 
-      <article class="card">
-        <h2>Boîtes disponibles</h2>
-        <input type="text" id="filterInput" placeholder="Filtrer par référence, lieu, contenu..." />
-        <div id="boxList" class="box-list"></div>
-      </article>
-    </section>
-  </main>
+  // remplace caractères parasites fréquents
+  value = value.replace(/°/g, '-');
+  value = value.replace(/_/g, '-');
+  value = value.replace(/\s+/g, '');
 
-  <script src="app.js"></script>
-</body>
-</html>
+  // enlève préfixe/suffixe parasites type Q...Q
+  value = value.replace(/^Q+/, '');
+  value = value.replace(/Q+$/, '');
+
+  // corrige BX sans tiret : BX042 -> BX-042
+  value = value.replace(/^BX[- ]?(\d+)$/, (_, num) => {
+    return `BX-${num.padStart(3, '0')}`;
+  });
+
+  // corrige si minuscule ou autre format proche
+  value = value.replace(/^B[Xx][- ]?(\d+)$/, (_, num) => {
+    return `BX-${num.padStart(3, '0')}`;
+  });
+
+  return value;
+}
+
+async function searchBox() {
+  const stock = await loadStock();
+  const input = document.getElementById('scanInput').value;
+  const normalized = normalizeScan(input);
+
+  const found = stock.find(box => box.id.toUpperCase() === normalized);
+
+  if (found) {
+    window.location.href = `box.html?id=${encodeURIComponent(found.id)}`;
+  } else {
+    alert(`Boîte introuvable : ${normalized}`);
+  }
+}
+
+document.getElementById('searchBtn').addEventListener('click', searchBox);
+
+document.getElementById('scanInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    searchBox();
+  }
+});
+</script>
