@@ -1,0 +1,38 @@
+[
+  {
+    "id": "BX-001",
+    "name": "Boîte vis M6",
+    "content": "Vis M6 x 20, rondelles, écrous",
+    "location": "Atelier A - Étagère 1 - Colonne B",
+    "quantity": 12,
+    "description": "Boîte dédiée à la visserie standard M6 pour les montages mécaniques.",
+    "updatedAt": "2026-03-06"
+  },
+  {
+    "id": "BX-002",
+    "name": "Boîte câbles réseau",
+    "content": "Câbles RJ45, embouts, colliers",
+    "location": "Salle réseau - Armoire 2 - Niveau 3",
+    "quantity": 4,
+    "description": "Câbles et accessoires réseau pour les postes et tests pédagogiques.",
+    "updatedAt": "2026-03-05"
+  },
+  {
+    "id": "BX-003",
+    "name": "Boîte capteurs",
+    "content": "Capteurs inductifs, optiques, fins de course",
+    "location": "Labo automatisme - Meuble fond - Bac 6",
+    "quantity": 2,
+    "description": "Capteurs de démonstration et de remplacement pour les TP.",
+    "updatedAt": "2026-03-04"
+  },
+  {
+    "id": "BX-004",
+    "name": "Boîte EPI",
+    "content": "Gants, lunettes, bouchons d’oreille",
+    "location": "Magasin - Zone sécurité - Étagère 2",
+    "quantity": 18,
+    "description": "Équipements de protection individuels disponibles pour les élèves.",
+    "updatedAt": "2026-03-06"
+  }
+]

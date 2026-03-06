@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock des boîtes - Lycée</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Gestion du stock des boîtes</h1>
+      <p>Consultation rapide du stock et des emplacements</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card hero">
+      <h2>Recherche rapide</h2>
+      <p>Scanne un code-barres ou saisis l’identifiant d’une boîte pour voir son emplacement, son contenu et son stock.</p>
+
+      <form id="searchForm" class="search-row">
+        <input type="text" id="searchInput" placeholder="Exemple : BX-001" autocomplete="off" />
+        <button type="submit">Voir la boîte</button>
+      </form>
+
+      <div class="tip">
+        Astuce : programme le code-barres pour ouvrir une URL comme
+        <code>box.html?id=BX-001</code>
+      </div>
+    </section>
+
+    <section class="grid two-cols">
+      <article class="card">
+        <h2>Stock global</h2>
+        <div id="stats" class="stats"></div>
+      </article>
+
+      <article class="card">
+        <h2>Boîtes disponibles</h2>
+        <input type="text" id="filterInput" placeholder="Filtrer par référence, lieu, contenu..." />
+        <div id="boxList" class="box-list"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
